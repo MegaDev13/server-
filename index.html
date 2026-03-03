@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self' https://*.supabase.co https://cdn.jsdelivr.net; 
+                   style-src 'self' 'unsafe-inline'; 
+                   script-src 'self' https://cdn.jsdelivr.net;">
+    <title>🔐 Vault Docs - Armazenamento Seguro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔐</text></svg>">
+</head>
+<body>
+    <div id="app">
+
+        <!-- ========================================= -->
+        <!-- LOADING SCREEN                            -->
+        <!-- ========================================= -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loader-spinner"></div>
+            <p>Verificando sessão...</p>
+        </div>
+
+        <!-- ========================================= -->
+        <!-- TELA DE AUTENTICAÇÃO (LOGIN / REGISTRO)   -->
+        <!-- ========================================= -->
+        <section id="auth-section" class="container hidden">
+            <div class="auth-card">
+                <div class="auth-logo">🔐</div>
+                <h1>Vault Docs</h1>
+                <p class="subtitle">Armazenamento seguro e comprimido</p>
+
+                <!-- Tabs Login / Registro -->
+                <div class="tab-buttons">
+                    <button class="tab-btn active" id="tab-login" onclick="showTab('login')">Entrar</button>
+                    <button class="tab-btn" id="tab-register" onclick="showTab('register')">Registrar</button>
+                </div>
+
+                <!-- FORMULÁRIO DE LOGIN -->
+                <form id="login-form" class="auth-form" onsubmit="return handleLogin(event)">
+                    <div class="input-group">
+                        <label for="login-email">📧 Email</label>
+                        <input type="email" id="login-email" required autocomplete="email"
+                               placeholder="seu@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="login-password">🔑 Senha</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="login-password" required
+                                   autocomplete="current-password" placeholder="Sua senha">
+                            <button type="button" class="toggle-pass" onclick="togglePassword('login-password', this)">👁️</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="login-btn">Entrar</button>
+                    <div id="login-error" class="error-msg"></div>
+                </form>
+
+                <!-- FORMULÁRIO DE REGISTRO -->
+                <form id="register-form" class="auth-form hidden" onsubmit="return handleRegister(event)">
+                    <div class="input-group">
+                        <label for="reg-email">📧 Email</label>
+                        <input type="email" id="reg-email" required autocomplete="email"
+                               placeholder="seu@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-password">🔑 Senha</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="reg-password" required minlength="8"
+                                   placeholder="Mín. 8 chars (A-z, 0-9, !@#)">
+                            <button type="button" class="toggle-pass" onclick="togglePassword('reg-password', this)">👁️</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="reg-password-confirm">🔑 Confirmar Senha</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="reg-password-confirm" required minlength="8"
+                                   placeholder="Repita a senha">
+                            <button type="button" class="toggle-pass" onclick="togglePassword('reg-password-confirm', this)">👁️</button>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Força da Senha -->
+                    <div class="strength-container">
+                        <div class="strength-bar">
+                            <div id="strength-fill" class="strength-fill"></div>
+                        </div>
+                        <span id="strength-text" class="strength-text"></span>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="register-btn">Criar Conta</button>
+                    <div id="register-error" class="error-msg"></div>
+                    <div id="register-success" class="success-msg"></div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ========================================= -->
+        <!-- DASHBOARD (PÓS LOGIN)                    -->
+        <!-- ========================================= -->
+        <section id="dashboard-section" class="container hidden">
+
+            <!-- Header -->
+            <header class="dash-header">
+                <div class="dash-brand">
+                    <span class="brand-icon">🔐</span>
+                    <h1>Vault Docs</h1>
+                </div>
+                <div class="user-info">
+                    <span id="user-email"></span>
+                    <button onclick="handleLogout()" class="btn-logout">🚪 Sair</button>
+                </div>
+            </header>
+
+            <!-- Zona de Upload -->
+            <div class="upload-area" id="drop-zone">
+                <div class="upload-icon">📁</div>
+                <p class="upload-title">Arraste arquivos aqui ou clique para selecionar</p>
+                <p class="upload-hint">Documentos serão comprimidos automaticamente com GZIP nível máximo</p>
+                <input type="file" id="file-input" multiple
+                       accept=".pdf,.doc,.docx,.txt,.xlsx,.xls,.csv,.json,.xml,.png,.jpg,.jpeg,.webp,.zip,.rar,.7z,.mp3,.mp4,.ogg,.wav">
+                <button onclick="document.getElementById('file-input').click()" class="btn-secondary">
+                    📎 Selecionar Arquivos
+                </button>
+            </div>
+
+            <!-- Barra de Progresso -->
+            <div id="upload-progress" class="progress-container hidden">
+                <div class="progress-info">
+                    <span id="progress-text">Comprimindo e enviando...</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon">📄</span>
+                    <span class="stat-number" id="total-docs">0</span>
+                    <span class="stat-label">Documentos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">📦</span>
+                    <span class="stat-number" id="total-original">0 B</span>
+                    <span class="stat-label">Tamanho Original</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🗜️</span>
+                    <span class="stat-number" id="total-compressed">0 B</span>
+                    <span class="stat-label">Comprimido</span>
+                </div>
+                <div class="stat-card highlight">
+                    <span class="stat-icon">💰</span>
+                    <span class="stat-number" id="total-saved">0%</span>
+                    <span class="stat-label">Economia</span>
+                </div>
+            </div>
+
+            <!-- Barra de Busca -->
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="🔍 Buscar documentos..."
+                       oninput="filterDocuments(this.value)">
+            </div>
+
+            <!-- Lista de Documentos -->
+            <div class="docs-section">
+                <div class="docs-header">
+                    <h2>📋 Meus Documentos</h2>
+                    <button class="btn-refresh" onclick="loadDocuments()" title="Atualizar">🔄</button>
+                </div>
+                <div id="documents-container">
+                    <p class="empty-state">Nenhum documento ainda. Faça seu primeiro upload! 🚀</p>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- ========================================= -->
+    <!-- SCRIPTS EXTERNOS                          -->
+    <!-- ========================================= -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+
+    <!-- SCRIPTS DO PROJETO -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
